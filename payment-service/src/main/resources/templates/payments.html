@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Payment Records</title>
+</head>
+<body>
+<h2>Payment Records</h2>
+<div th:each="payment : ${payments}">
+  <p th:text="'Order ID: ' + ${payment.orderId} + ', Status: ' + ${payment.status}"></p>
+</div>
+</body>
+</html>

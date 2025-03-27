@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <title>Inventory Dashboard</title>
+</head>
+<body>
+<h2>Inventory Dashboard</h2>
+<div th:each="item : ${inventory}">
+    <p th:text="'Product ID: ' + ${item.productId} + ', Quantity: ' + ${item.quantity}"></p>
+</div>
+</body>
+</html>
