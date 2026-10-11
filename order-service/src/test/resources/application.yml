@@ -1,0 +1,17 @@
+# No Docker in CI/local test runs: use ActiveMQ's in-VM "vm://" transport, which auto-starts an
+# embedded broker in this JVM as long as activemq-broker is on the test classpath. Boot 4.1 also
+# exposes spring.activemq.embedded.enabled for this, but that flag only takes effect when
+# broker-url is unset for the *simple* (non-pooled, non-caching) connection factory flavour; the
+# explicit vm:// URL below works uniformly regardless of which ConnectionFactory flavour Boot picks.
+spring:
+  activemq:
+    broker-url: vm://order-service-test?broker.persistent=false&broker.useShutdownHook=false
+  jms:
+    pub-sub-domain: true
+
+# src/test/resources/application.yml shadows src/main/resources/application.yml on the test
+# classpath rather than layering on top of it, so @ConfigurationProperties with validation
+# constraints need their values restated here too.
+order:
+  catalog:
+    products: WIDGET,GADGET,GIZMO
