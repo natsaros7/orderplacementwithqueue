@@ -34,7 +34,7 @@ flowchart LR
 
 | Component       | Version                         |
 |-----------------|----------------------------------|
-| Java            | 21                               |
+| Java            | 25                               |
 | Spring Boot     | 4.1.1                            |
 | Spring Framework| 7.0.9                            |
 | Jackson         | 3.1.5 (`tools.jackson.*`)        |
@@ -45,7 +45,7 @@ flowchart LR
 
 ## Prerequisites
 
-- JDK 21 (`.sdkmanrc` pins `21.0.10-tem`; `sdk env install` if using SDKMAN!).
+- JDK 25 (`.sdkmanrc` pins `25.0.4-tem`; `sdk env install` if using SDKMAN!).
 - Maven Wrapper (`./mvnw`) — no local Maven install required.
 - Docker + Docker Compose, only for running the full stack locally; the build and test suite do
   not require Docker.

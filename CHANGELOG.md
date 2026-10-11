@@ -43,7 +43,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `apache/activemq-classic`, with health checks wiring service startup order.
 
 ### Changed
-- Upgraded to Spring Boot 4.1.1 / Spring Framework 7 / Java 21 / Jackson 3, replacing the
+- Upgraded to Spring Boot 4.1.1 / Spring Framework 7 / Java 25 / Jackson 3, replacing the
   deprecated `MappingJackson2MessageConverter` with `JacksonJsonMessageConverter`.
 - Root POM now inherits `spring-boot-starter-parent` instead of only importing the BOM, so plugin
   versions (surefire, failsafe, compiler) are managed consistently instead of drifting.
