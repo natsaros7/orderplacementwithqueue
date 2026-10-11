@@ -1,0 +1,18 @@
+# src/test/resources/application.yml shadows src/main/resources/application.yml on the test
+# classpath rather than layering on top of it, so properties needed by tests are restated here.
+spring:
+  activemq:
+    broker-url: vm://inventory-service-test?broker.persistent=false&broker.useShutdownHook=false
+  jms:
+    pub-sub-domain: true
+    client-id: inventory-service-test
+    cache:
+      enabled: false
+    listener:
+      session:
+        transacted: true
+  jpa:
+    defer-datasource-initialization: true
+  sql:
+    init:
+      mode: always
