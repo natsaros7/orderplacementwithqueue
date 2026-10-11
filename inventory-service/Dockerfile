@@ -12,13 +12,13 @@ RUN ./mvnw -B -ntp -q -pl inventory-service -am dependency:go-offline
 COPY order-contracts/src order-contracts/src
 COPY inventory-service/src inventory-service/src
 RUN ./mvnw -B -ntp -q -pl inventory-service -am -DskipTests package
-RUN java -Djarmode=tools -jar inventory-service/target/inventory-service-*-exec.jar extract --layers --launcher \
+RUN java -Djarmode=tools -jar inventory-service/target/inventory-service-*.jar extract --layers --launcher \
     --destination /workspace/extracted
 
+# eclipse-temurin's Ubuntu-based images already ship curl/wget (used by the compose healthcheck)
+# and already have a non-root "ubuntu" user at uid 1000, so a fresh --uid 1000 useradd would clash.
 FROM eclipse-temurin:21-jre AS runtime
-RUN apt-get update && apt-get install -y --no-install-recommends curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && useradd --system --uid 1000 --shell /usr/sbin/nologin app
+RUN useradd --system --no-create-home --shell /usr/sbin/nologin app
 WORKDIR /app
 COPY --from=build --chown=app:app /workspace/extracted/dependencies/ ./
 COPY --from=build --chown=app:app /workspace/extracted/spring-boot-loader/ ./
@@ -26,6 +26,4 @@ COPY --from=build --chown=app:app /workspace/extracted/snapshot-dependencies/ ./
 COPY --from=build --chown=app:app /workspace/extracted/application/ ./
 USER app
 EXPOSE 8081
-HEALTHCHECK --interval=10s --timeout=5s --retries=10 \
-    CMD curl -sf http://localhost:8081/actuator/health || exit 1
 ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]

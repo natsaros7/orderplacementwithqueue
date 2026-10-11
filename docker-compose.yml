@@ -3,16 +3,23 @@ services:
     image: apache/activemq-classic:6.2.0
     container_name: activemq
     ports:
-      - "8161:8161" # Web console
-      - "61616:61616" # JMS (OpenWire)
+      - "127.0.0.1:8161:8161" # Web console
+      - "127.0.0.1:61616:61616" # JMS (OpenWire)
     environment:
-      ACTIVEMQ_ADMIN_LOGIN: ${ACTIVEMQ_USER:-admin}
-      ACTIVEMQ_ADMIN_PASSWORD: ${ACTIVEMQ_PASSWORD:-admin}
+      # Read by the image's own entrypoint.sh (not ACTIVEMQ_ADMIN_LOGIN/PASSWORD, which it ignores).
+      ACTIVEMQ_CONNECTION_USER: ${ACTIVEMQ_USER:-admin}
+      ACTIVEMQ_CONNECTION_PASSWORD: ${ACTIVEMQ_PASSWORD:-admin}
+      ACTIVEMQ_WEB_USER: ${ACTIVEMQ_USER:-admin}
+      ACTIVEMQ_WEB_PASSWORD: ${ACTIVEMQ_PASSWORD:-admin}
+    volumes:
+      - activemq-data:/opt/apache-activemq/data
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8161/ || exit 1"]
+      # The web console requires auth on every path (even "/"), so probe the OpenWire port itself.
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/61616' || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 20s
     restart: unless-stopped
 
   order-service:
@@ -30,10 +37,11 @@ services:
       activemq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
     restart: unless-stopped
 
   inventory-service:
@@ -51,10 +59,11 @@ services:
       activemq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
     restart: unless-stopped
 
   payment-service:
@@ -72,8 +81,12 @@ services:
       activemq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8082/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "curl -sf http://localhost:8082/actuator/health/readiness || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
+      start_period: 30s
     restart: unless-stopped
+
+volumes:
+  activemq-data:
