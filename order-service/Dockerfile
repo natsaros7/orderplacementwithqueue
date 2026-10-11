@@ -1,0 +1,29 @@
+# Build context is the repo root (`docker build -f order-service/Dockerfile .`) so the reactor
+# (order-contracts + order-service) can be built with Maven's -am "also make" flag.
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /workspace
+COPY .mvn/ .mvn/
+COPY mvnw pom.xml ./
+COPY order-contracts/pom.xml order-contracts/pom.xml
+COPY order-service/pom.xml order-service/pom.xml
+COPY inventory-service/pom.xml inventory-service/pom.xml
+COPY payment-service/pom.xml payment-service/pom.xml
+RUN ./mvnw -B -ntp -q -pl order-service -am dependency:go-offline
+COPY order-contracts/src order-contracts/src
+COPY order-service/src order-service/src
+RUN ./mvnw -B -ntp -q -pl order-service -am -DskipTests package
+RUN java -Djarmode=tools -jar order-service/target/order-service-*.jar extract --layers --launcher \
+    --destination /workspace/extracted
+
+# eclipse-temurin's Ubuntu-based images already ship curl/wget (used by the compose healthcheck)
+# and already have a non-root "ubuntu" user at uid 1000, so a fresh --uid 1000 useradd would clash.
+FROM eclipse-temurin:21-jre AS runtime
+RUN useradd --system --no-create-home --shell /usr/sbin/nologin app
+WORKDIR /app
+COPY --from=build --chown=app:app /workspace/extracted/dependencies/ ./
+COPY --from=build --chown=app:app /workspace/extracted/spring-boot-loader/ ./
+COPY --from=build --chown=app:app /workspace/extracted/snapshot-dependencies/ ./
+COPY --from=build --chown=app:app /workspace/extracted/application/ ./
+USER app
+EXPOSE 8080
+ENTRYPOINT ["java", "org.springframework.boot.loader.launch.JarLauncher"]

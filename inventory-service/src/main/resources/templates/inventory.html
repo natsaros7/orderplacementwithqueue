@@ -1,12 +1,48 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-    <title>Inventory Dashboard</title>
+    <meta charset="UTF-8"/>
+    <title>Inventory</title>
 </head>
 <body>
-<h2>Inventory Dashboard</h2>
-<div th:each="item : ${inventory}">
-    <p th:text="'Product ID: ' + ${item.productId} + ', Quantity: ' + ${item.quantity}"></p>
-</div>
+<main>
+    <h1>Stock</h1>
+    <table>
+        <thead>
+        <tr>
+            <th scope="col">Product</th>
+            <th scope="col">Stock</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="item : ${stock}">
+            <td th:text="${item.productCode}"></td>
+            <td th:text="${item.stock}"></td>
+        </tr>
+        </tbody>
+    </table>
+
+    <h1>Reservations</h1>
+    <table>
+        <thead>
+        <tr>
+            <th scope="col">Order id</th>
+            <th scope="col">Product</th>
+            <th scope="col">Quantity</th>
+            <th scope="col">Status</th>
+            <th scope="col">Decided at</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="reservation : ${reservations}">
+            <td th:text="${reservation.orderId}"></td>
+            <td th:text="${reservation.productCode}"></td>
+            <td th:text="${reservation.quantity}"></td>
+            <td th:text="${reservation.status}"></td>
+            <td th:text="${reservation.decidedAt}"></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
 </body>
 </html>

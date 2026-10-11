@@ -1,12 +1,92 @@
-version: '3.8'
 services:
   activemq:
-    image: rmohr/activemq:5.15.9
+    image: apache/activemq-classic:6.2.0
     container_name: activemq
     ports:
-      - "8161:8161" # Web Console
-      - "61616:61616" # JMS
+      - "127.0.0.1:8161:8161" # Web console
+      - "127.0.0.1:61616:61616" # JMS (OpenWire)
     environment:
-      ACTIVEMQ_ADMIN_LOGIN: admin
-      ACTIVEMQ_ADMIN_PASSWORD: admin
+      # Read by the image's own entrypoint.sh (not ACTIVEMQ_ADMIN_LOGIN/PASSWORD, which it ignores).
+      ACTIVEMQ_CONNECTION_USER: ${ACTIVEMQ_USER:-admin}
+      ACTIVEMQ_CONNECTION_PASSWORD: ${ACTIVEMQ_PASSWORD:-admin}
+      ACTIVEMQ_WEB_USER: ${ACTIVEMQ_USER:-admin}
+      ACTIVEMQ_WEB_PASSWORD: ${ACTIVEMQ_PASSWORD:-admin}
+    volumes:
+      - activemq-data:/opt/apache-activemq/data
+    healthcheck:
+      # The web console requires auth on every path (even "/"), so probe the OpenWire port itself.
+      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/61616' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
     restart: unless-stopped
+
+  order-service:
+    build:
+      context: .
+      dockerfile: order-service/Dockerfile
+    container_name: order-service
+    ports:
+      - "8080:8080"
+    environment:
+      ACTIVEMQ_URL: tcp://activemq:61616
+      ACTIVEMQ_USER: ${ACTIVEMQ_USER:-admin}
+      ACTIVEMQ_PASSWORD: ${ACTIVEMQ_PASSWORD:-admin}
+    depends_on:
+      activemq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  inventory-service:
+    build:
+      context: .
+      dockerfile: inventory-service/Dockerfile
+    container_name: inventory-service
+    ports:
+      - "8081:8081"
+    environment:
+      ACTIVEMQ_URL: tcp://activemq:61616
+      ACTIVEMQ_USER: ${ACTIVEMQ_USER:-admin}
+      ACTIVEMQ_PASSWORD: ${ACTIVEMQ_PASSWORD:-admin}
+    depends_on:
+      activemq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: payment-service/Dockerfile
+    container_name: payment-service
+    ports:
+      - "8082:8082"
+    environment:
+      ACTIVEMQ_URL: tcp://activemq:61616
+      ACTIVEMQ_USER: ${ACTIVEMQ_USER:-admin}
+      ACTIVEMQ_PASSWORD: ${ACTIVEMQ_PASSWORD:-admin}
+    depends_on:
+      activemq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8082/actuator/health/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  activemq-data:
