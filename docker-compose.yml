@@ -37,7 +37,8 @@ services:
       activemq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8080/actuator/health/readiness || exit 1"]
+      # temurin 25 JRE images ship no curl/wget: plain HTTP over bash /dev/tcp
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /actuator/health/readiness HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '\"status\":\"UP\"' <&3"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -59,7 +60,8 @@ services:
       activemq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8081/actuator/health/readiness || exit 1"]
+      # temurin 25 JRE images ship no curl/wget: plain HTTP over bash /dev/tcp
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8081 && printf 'GET /actuator/health/readiness HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '\"status\":\"UP\"' <&3"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -81,7 +83,8 @@ services:
       activemq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:8082/actuator/health/readiness || exit 1"]
+      # temurin 25 JRE images ship no curl/wget: plain HTTP over bash /dev/tcp
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8082 && printf 'GET /actuator/health/readiness HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q '\"status\":\"UP\"' <&3"]
       interval: 10s
       timeout: 5s
       retries: 10
