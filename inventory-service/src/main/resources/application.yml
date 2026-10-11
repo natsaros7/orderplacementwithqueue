@@ -9,9 +9,10 @@ spring:
       trust-all: false
   jms:
     pub-sub-domain: true
-    # Durable topic subscription: this client id + the listener's subscription name together
-    # identify the subscription ActiveMQ keeps around while this consumer is offline. A durable
-    # subscriber needs a real (non-shared) Connection to set its client id, so caching is off.
+    subscription-durable: true
+    # This client id + the listener's subscription name together identify the subscription
+    # ActiveMQ keeps around while this consumer is offline. A durable subscriber needs a real
+    # (non-shared) Connection to set its client id, so caching is off.
     client-id: ${INVENTORY_JMS_CLIENT_ID:inventory-service}
     cache:
       enabled: false
@@ -35,6 +36,13 @@ spring:
   sql:
     init:
       mode: always
+
+app:
+  jms:
+    redelivery:
+      max-redeliveries: ${INVENTORY_JMS_MAX_REDELIVERIES:3}
+      initial-delay: ${INVENTORY_JMS_INITIAL_REDELIVERY_DELAY:1s}
+      back-off-multiplier: ${INVENTORY_JMS_REDELIVERY_BACKOFF_MULTIPLIER:2.0}
 
 server:
   port: ${SERVER_PORT:8081}

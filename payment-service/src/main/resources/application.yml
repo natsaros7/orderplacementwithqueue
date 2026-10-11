@@ -9,9 +9,10 @@ spring:
       trust-all: false
   jms:
     pub-sub-domain: true
-    # Durable topic subscription: this client id + the listener's subscription name together
-    # identify the subscription ActiveMQ keeps around while this consumer is offline. A durable
-    # subscriber needs a real (non-shared) Connection to set its client id, so caching is off.
+    subscription-durable: true
+    # This client id + the listener's subscription name together identify the subscription
+    # ActiveMQ keeps around while this consumer is offline. A durable subscriber needs a real
+    # (non-shared) Connection to set its client id, so caching is off.
     client-id: ${PAYMENT_JMS_CLIENT_ID:payment-service}
     cache:
       enabled: false
@@ -30,6 +31,13 @@ spring:
   mvc:
     problemdetails:
       enabled: true
+
+app:
+  jms:
+    redelivery:
+      max-redeliveries: ${PAYMENT_JMS_MAX_REDELIVERIES:3}
+      initial-delay: ${PAYMENT_JMS_INITIAL_REDELIVERY_DELAY:1s}
+      back-off-multiplier: ${PAYMENT_JMS_REDELIVERY_BACKOFF_MULTIPLIER:2.0}
 
 server:
   port: ${SERVER_PORT:8082}

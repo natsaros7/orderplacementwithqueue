@@ -23,7 +23,7 @@ public class PaymentProcessingService {
     }
 
     @Transactional
-    @JmsListener(destination = OrderDestinations.ORDERS_TOPIC, containerFactory = JmsConfig.DURABLE_TOPIC_CONTAINER_FACTORY,
+    @JmsListener(id = "paymentOrdersListener", destination = OrderDestinations.ORDERS_TOPIC,
             subscription = JmsConfig.DURABLE_SUBSCRIPTION_NAME)
     public void onOrderPlaced(final OrderPlaced orderPlaced) {
         if (paymentRepository.existsByOrderId(orderPlaced.orderId())) {

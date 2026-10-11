@@ -28,7 +28,7 @@ public class InventoryReservationService {
     }
 
     @Transactional
-    @JmsListener(destination = OrderDestinations.ORDERS_TOPIC, containerFactory = JmsConfig.DURABLE_TOPIC_CONTAINER_FACTORY,
+    @JmsListener(id = "inventoryOrdersListener", destination = OrderDestinations.ORDERS_TOPIC,
             subscription = JmsConfig.DURABLE_SUBSCRIPTION_NAME)
     public void onOrderPlaced(final OrderPlaced orderPlaced) {
         if (reservationRepository.existsByOrderId(orderPlaced.orderId())) {
