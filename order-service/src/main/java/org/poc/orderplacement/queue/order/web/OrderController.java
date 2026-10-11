@@ -3,6 +3,7 @@ package org.poc.orderplacement.queue.order.web;
 import jakarta.validation.Valid;
 import org.poc.orderplacement.queue.order.config.OrderCatalogProperties;
 import org.poc.orderplacement.queue.order.domain.Order;
+import org.poc.orderplacement.queue.order.domain.OrderStatus;
 import org.poc.orderplacement.queue.order.service.OrderService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -41,7 +42,14 @@ public class OrderController {
         }
 
         final Order placed = orderService.placeOrder(orderForm);
-        redirectAttributes.addFlashAttribute("message", "Order placed successfully! Order id: " + placed.getId());
+        // placeOrder's AFTER_COMMIT publish has already run synchronously by the time it returns, so
+        // re-reading reflects the real outcome even though `placed` itself predates that publish.
+        final Order current = orderService.getOrder(placed.getId());
+        final String message = current.getStatus() == OrderStatus.PUBLISH_FAILED
+                ? "Order " + current.getId() + " was saved, but publishing it to inventory/payment failed. "
+                        + "It will not be fulfilled until republished."
+                : "Order placed successfully! Order id: " + current.getId();
+        redirectAttributes.addFlashAttribute("message", message);
         return "redirect:/orders/new";
     }
 }

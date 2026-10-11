@@ -1,5 +1,6 @@
 package org.poc.orderplacement.queue.order.service;
 
+import java.util.UUID;
 import org.poc.orderplacement.queue.contracts.OrderPlaced;
 import org.poc.orderplacement.queue.order.domain.Order;
 import org.poc.orderplacement.queue.order.domain.OrderRepository;
@@ -40,5 +41,16 @@ public class OrderService {
                 new OrderPlaced(order.getId(), order.getProductCode(), order.getQuantity(), order.getPlacedAt())));
 
         return order;
+    }
+
+    /**
+     * Re-reads the order. Called after {@link #placeOrder} returns, by which point the AFTER_COMMIT
+     * publish (success or failure, see {@link org.poc.orderplacement.queue.order.messaging.OrderPlacedPublisher})
+     * has already run synchronously on the same thread, so this reflects the real outcome even though
+     * the {@link Order} instance {@code placeOrder} returned does not (it predates that publish).
+     */
+    @Transactional(readOnly = true)
+    public Order getOrder(final UUID orderId) {
+        return orderRepository.findById(orderId).orElseThrow();
     }
 }

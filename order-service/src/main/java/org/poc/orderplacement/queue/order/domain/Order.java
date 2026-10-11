@@ -2,6 +2,8 @@ package org.poc.orderplacement.queue.order.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
@@ -25,6 +27,10 @@ public class Order {
     @Column(nullable = false)
     private Instant placedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private OrderStatus status;
+
     protected Order() {
         // JPA
     }
@@ -33,6 +39,7 @@ public class Order {
         this.productCode = productCode;
         this.quantity = quantity;
         this.placedAt = Instant.now();
+        this.status = OrderStatus.PLACED;
     }
 
     public UUID getId() {
@@ -49,5 +56,14 @@ public class Order {
 
     public Instant getPlacedAt() {
         return placedAt;
+    }
+
+    public OrderStatus getStatus() {
+        return status;
+    }
+
+    /** Recorded by {@link org.poc.orderplacement.queue.order.messaging.OrderPlacedPublisher} when the post-commit publish fails. */
+    public void markPublishFailed() {
+        this.status = OrderStatus.PUBLISH_FAILED;
     }
 }
