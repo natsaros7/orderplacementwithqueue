@@ -1,4 +1,4 @@
-package org.poc.orderplacement.queue.inventory.enums;
+package org.poc.orderplacement.queue.inventory.domain;
 
 public enum ReservationStatus {
     RESERVED,

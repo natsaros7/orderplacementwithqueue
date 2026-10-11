@@ -10,7 +10,6 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
 import java.util.UUID;
-import org.poc.orderplacement.queue.inventory.enums.ReservationStatus;
 
 @Entity
 @Table(name = "inventory_reservation", uniqueConstraints = @UniqueConstraint(columnNames = "order_id"))
