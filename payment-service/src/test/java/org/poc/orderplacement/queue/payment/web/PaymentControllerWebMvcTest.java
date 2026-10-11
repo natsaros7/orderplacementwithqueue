@@ -15,11 +15,16 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 @WebMvcTest(PaymentController.class)
 class PaymentControllerWebMvcTest {
 
-    @Autowired
-    private MockMvcTester mvc;
+    private final MockMvcTester mvc;
 
+    // @MockitoBean only supports field/type targets, not constructor parameters, so this stays a field.
     @MockitoBean
     private PaymentRepository paymentRepository;
+
+    @Autowired
+    PaymentControllerWebMvcTest(final MockMvcTester mvc) {
+        this.mvc = mvc;
+    }
 
     @Test
     void should_renderPayments_when_gettingHomePage() {

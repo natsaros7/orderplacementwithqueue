@@ -15,14 +15,19 @@ import org.springframework.test.web.servlet.assertj.MockMvcTester;
 @WebMvcTest(InventoryController.class)
 class InventoryControllerWebMvcTest {
 
-    @Autowired
-    private MockMvcTester mvc;
+    private final MockMvcTester mvc;
 
+    // @MockitoBean only supports field/type targets, not constructor parameters, so these stay fields.
     @MockitoBean
     private InventoryItemRepository inventoryItemRepository;
 
     @MockitoBean
     private InventoryReservationRepository reservationRepository;
+
+    @Autowired
+    InventoryControllerWebMvcTest(final MockMvcTester mvc) {
+        this.mvc = mvc;
+    }
 
     @Test
     void should_renderStock_when_gettingHomePage() {

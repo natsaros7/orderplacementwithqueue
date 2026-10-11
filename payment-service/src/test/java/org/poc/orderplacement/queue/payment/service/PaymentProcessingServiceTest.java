@@ -15,7 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.poc.orderplacement.queue.contracts.OrderPlaced;
 import org.poc.orderplacement.queue.payment.domain.Payment;
-import org.poc.orderplacement.queue.payment.enums.PaymentStatus;
+import org.poc.orderplacement.queue.payment.domain.PaymentStatus;
 import org.poc.orderplacement.queue.payment.repository.PaymentRepository;
 
 @ExtendWith(MockitoExtension.class)

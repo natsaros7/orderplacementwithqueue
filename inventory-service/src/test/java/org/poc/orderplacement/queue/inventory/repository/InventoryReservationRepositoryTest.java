@@ -13,8 +13,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 @DataJpaTest
 class InventoryReservationRepositoryTest {
 
+    private final InventoryReservationRepository reservationRepository;
+
     @Autowired
-    private InventoryReservationRepository reservationRepository;
+    InventoryReservationRepositoryTest(final InventoryReservationRepository reservationRepository) {
+        this.reservationRepository = reservationRepository;
+    }
 
     @Test
     void should_rejectDuplicateOrderId_when_savingSecondReservationForSameOrder() {

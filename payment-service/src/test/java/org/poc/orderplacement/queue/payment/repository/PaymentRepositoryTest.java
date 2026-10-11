@@ -13,8 +13,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 @DataJpaTest
 class PaymentRepositoryTest {
 
+    private final PaymentRepository paymentRepository;
+
     @Autowired
-    private PaymentRepository paymentRepository;
+    PaymentRepositoryTest(final PaymentRepository paymentRepository) {
+        this.paymentRepository = paymentRepository;
+    }
 
     @Test
     void should_rejectDuplicateOrderId_when_savingSecondPaymentForSameOrder() {

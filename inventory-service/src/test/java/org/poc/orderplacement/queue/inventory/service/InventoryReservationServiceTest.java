@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -17,7 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.poc.orderplacement.queue.contracts.OrderPlaced;
 import org.poc.orderplacement.queue.inventory.domain.InventoryItem;
 import org.poc.orderplacement.queue.inventory.domain.InventoryReservation;
-import org.poc.orderplacement.queue.inventory.enums.ReservationStatus;
+import org.poc.orderplacement.queue.inventory.domain.ReservationStatus;
 import org.poc.orderplacement.queue.inventory.repository.InventoryItemRepository;
 import org.poc.orderplacement.queue.inventory.repository.InventoryReservationRepository;
 
@@ -32,9 +33,13 @@ class InventoryReservationServiceTest {
 
     private InventoryReservationService service;
 
+    @BeforeEach
+    void setUp() {
+        service = new InventoryReservationService(inventoryItemRepository, reservationRepository);
+    }
+
     @Test
     void should_reserveStock_when_sufficientStockAvailable() {
-        service = new InventoryReservationService(inventoryItemRepository, reservationRepository);
         final OrderPlaced orderPlaced = new OrderPlaced(UUID.randomUUID(), "WIDGET", 2, Instant.now());
         when(reservationRepository.existsByOrderId(orderPlaced.orderId())).thenReturn(false);
         when(inventoryItemRepository.findById("WIDGET")).thenReturn(Optional.of(new InventoryItem("WIDGET", 5)));
@@ -52,7 +57,6 @@ class InventoryReservationServiceTest {
 
     @Test
     void should_rejectReservation_when_insufficientStock() {
-        service = new InventoryReservationService(inventoryItemRepository, reservationRepository);
         final OrderPlaced orderPlaced = new OrderPlaced(UUID.randomUUID(), "GIZMO", 10, Instant.now());
         when(reservationRepository.existsByOrderId(orderPlaced.orderId())).thenReturn(false);
         when(inventoryItemRepository.findById("GIZMO")).thenReturn(Optional.of(new InventoryItem("GIZMO", 1)));
@@ -67,7 +71,6 @@ class InventoryReservationServiceTest {
 
     @Test
     void should_skipProcessing_when_orderAlreadyReserved() {
-        service = new InventoryReservationService(inventoryItemRepository, reservationRepository);
         final OrderPlaced orderPlaced = new OrderPlaced(UUID.randomUUID(), "WIDGET", 1, Instant.now());
         when(reservationRepository.existsByOrderId(orderPlaced.orderId())).thenReturn(true);
 
