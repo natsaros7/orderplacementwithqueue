@@ -1,12 +1,32 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
 <head>
-  <title>Payment Records</title>
+    <meta charset="UTF-8"/>
+    <title>Payments</title>
 </head>
 <body>
-<h2>Payment Records</h2>
-<div th:each="payment : ${payments}">
-  <p th:text="'Order ID: ' + ${payment.orderId} + ', Status: ' + ${payment.status}"></p>
-</div>
+<main>
+    <h1>Payments</h1>
+    <table>
+        <thead>
+        <tr>
+            <th scope="col">Order id</th>
+            <th scope="col">Product</th>
+            <th scope="col">Quantity</th>
+            <th scope="col">Status</th>
+            <th scope="col">Processed at</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="payment : ${payments}">
+            <td th:text="${payment.orderId}"></td>
+            <td th:text="${payment.productCode}"></td>
+            <td th:text="${payment.quantity}"></td>
+            <td th:text="${payment.status}"></td>
+            <td th:text="${payment.processedAt}"></td>
+        </tr>
+        </tbody>
+    </table>
+</main>
 </body>
 </html>
