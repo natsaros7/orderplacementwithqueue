@@ -27,7 +27,7 @@
     </modules>
 
     <properties>
-        <java.version>21</java.version>
+        <java.version>25</java.version>
         <jacoco.version>0.8.13</jacoco.version>
     </properties>
 
@@ -64,7 +64,7 @@
                             <exclude>**/*IT.java</exclude>
                         </excludes>
                         <!-- @{argLine} keeps JaCoCo's agent; loading Mockito as a javaagent instead of
-                             letting it self-attach silences the JDK 21 dynamic-agent warning. -->
+                             letting it self-attach silences the JDK 25 dynamic-agent warning. -->
                         <argLine>@{argLine} -javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine>
                     </configuration>
                 </plugin>

@@ -24,16 +24,28 @@ updates:
     directory: /order-service
     schedule:
       interval: weekly
+    # Java majors are deliberate LTS moves (java.version, .sdkmanrc, CI), not image bumps.
+    ignore:
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: /inventory-service
     schedule:
       interval: weekly
+    # Java majors are deliberate LTS moves (java.version, .sdkmanrc, CI), not image bumps.
+    ignore:
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: /payment-service
     schedule:
       interval: weekly
+    # Java majors are deliberate LTS moves (java.version, .sdkmanrc, CI), not image bumps.
+    ignore:
+      - dependency-name: eclipse-temurin
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker-compose
     directory: /
