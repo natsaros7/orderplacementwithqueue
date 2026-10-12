@@ -22,13 +22,16 @@ consumers, no shared JPA entities.
 ```mermaid
 flowchart LR
     User((User)) -->|"POST /orders"| OrderService[order-service]
-    OrderService -->|"1. save Order (tx)"| OrderDB[(H2: orderdb)]
+    OrderService -->|"1. save Order (tx)"| OrderDB[(Postgres: orders)]
     OrderService -->|"2. publish OrderPlaced<br/>(AFTER_COMMIT)"| Topic{{orders.topic}}
     Topic -->|durable sub: inventory-orders-subscription| InventoryService[inventory-service]
     Topic -->|durable sub: payment-orders-subscription| PaymentService[payment-service]
-    InventoryService -->|reserve or reject stock| InventoryDB[(H2: inventorydb)]
-    PaymentService -->|record payment| PaymentDB[(H2: paymentdb)]
+    InventoryService -->|reserve or reject stock| InventoryDB[(Postgres: inventory)]
+    PaymentService -->|record payment| PaymentDB[(Postgres: payments)]
 ```
+
+One Postgres container hosts all three databases (`orders`, `inventory`, `payments`), each with its
+own login role; see "Design notes & trade-offs" for the database-per-service rationale.
 
 ## Tech stack
 
@@ -39,7 +42,9 @@ flowchart LR
 | Spring Framework| 7.0.9                            |
 | Jackson         | 3.1.5 (`tools.jackson.*`)        |
 | ActiveMQ Classic| 6.2.9 (client/broker), 6.2.0 image |
-| H2              | runtime-managed by Boot BOM      |
+| PostgreSQL      | 18 (image), driver runtime-managed by Boot BOM |
+| Flyway          | 12.4.0                           |
+| Testcontainers  | 2.0.5 (Postgres + ActiveMQ modules, tests only) |
 | Thymeleaf       | runtime-managed by Boot BOM      |
 | JUnit / Mockito / AssertJ / Awaitility | 6.x / 5.x / 3.x / 4.3.0 |
 
@@ -47,8 +52,11 @@ flowchart LR
 
 - JDK 25 (`.sdkmanrc` pins `25.0.4-tem`; `sdk env install` if using SDKMAN!).
 - Maven Wrapper (`./mvnw`) — no local Maven install required.
-- Docker + Docker Compose, only for running the full stack locally; the build and test suite do
-  not require Docker.
+- Docker, running and reachable — the integration tests use Testcontainers (Postgres + ActiveMQ) and
+  `clean verify` will fail without it. On macOS without Docker Desktop, [colima](https://github.com/abiosoft/colima)
+  works: `colima start`, then make sure `DOCKER_HOST` and `TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE` are
+  set as colima's docs describe.
+- Docker Compose, for running the full stack locally (not required to build/test).
 
 ## Build & test
 
@@ -68,13 +76,17 @@ open order-service/target/site/jacoco/index.html
 
 ## Run locally
 
-### With the Maven Wrapper (requires a local or Dockerized ActiveMQ on `tcp://localhost:61616`)
+### With the Maven Wrapper (requires a local or Dockerized ActiveMQ + Postgres)
 
 `spring-boot:run` needs order-contracts already built and installed (it isn't a reactor-aware goal
-the way `test`/`verify` are), so install once first:
+the way `test`/`verify` are), so install once first. Each service also needs its own database/role to
+already exist (see `db/init/001-create-service-databases.sql`, run automatically by Compose but not
+by a bare `docker run`):
 
 ```bash
 docker run -p 61616:61616 -p 8161:8161 apache/activemq-classic:6.2.0
+docker run -p 5432:5432 -e POSTGRES_PASSWORD=postgres \
+  -v "$PWD/db/init:/docker-entrypoint-initdb.d:ro" postgres:18
 
 ./mvnw -B -ntp -DskipTests install
 ./mvnw -pl order-service spring-boot:run
@@ -109,12 +121,13 @@ honor `ACTIVEMQ_USER`/`ACTIVEMQ_PASSWORD`.
 | `ACTIVEMQ_USER`         | `spring.activemq.user` (client), `ACTIVEMQ_CONNECTION_USER` (broker, compose only) | `admin` | Broker username |
 | `ACTIVEMQ_PASSWORD`     | `spring.activemq.password` (client), `ACTIVEMQ_CONNECTION_PASSWORD` (broker, compose only) | `admin` | Broker password |
 | `SERVER_PORT`           | `server.port`                      | `8080` / `8081` / `8082`                  | HTTP port per service |
-| `ORDER_DB_URL`          | `spring.datasource.url`            | `jdbc:h2:mem:orderdb;...`                 | order-service datasource |
-| `ORDER_DB_USERNAME` / `ORDER_DB_PASSWORD` | `spring.datasource.username` / `.password` | `sa` / (empty) | order-service datasource credentials |
-| `INVENTORY_DB_URL`      | `spring.datasource.url`            | `jdbc:h2:mem:inventorydb;...`             | inventory-service datasource |
-| `INVENTORY_DB_USERNAME` / `INVENTORY_DB_PASSWORD` | `spring.datasource.username` / `.password` | `sa` / (empty) | inventory-service datasource credentials |
-| `PAYMENT_DB_URL`        | `spring.datasource.url`            | `jdbc:h2:mem:paymentdb;...`               | payment-service datasource |
-| `PAYMENT_DB_USERNAME` / `PAYMENT_DB_PASSWORD` | `spring.datasource.username` / `.password` | `sa` / (empty) | payment-service datasource credentials |
+| `ORDER_DB_URL`          | `spring.datasource.url`            | `jdbc:postgresql://localhost:5432/orders` | order-service datasource |
+| `ORDER_DB_USERNAME` / `ORDER_DB_PASSWORD` | `spring.datasource.username` / `.password` | `orders` / `orders` | order-service datasource credentials |
+| `INVENTORY_DB_URL`      | `spring.datasource.url`            | `jdbc:postgresql://localhost:5432/inventory` | inventory-service datasource |
+| `INVENTORY_DB_USERNAME` / `INVENTORY_DB_PASSWORD` | `spring.datasource.username` / `.password` | `inventory` / `inventory` | inventory-service datasource credentials |
+| `PAYMENT_DB_URL`        | `spring.datasource.url`            | `jdbc:postgresql://localhost:5432/payments` | payment-service datasource |
+| `PAYMENT_DB_USERNAME` / `PAYMENT_DB_PASSWORD` | `spring.datasource.username` / `.password` | `payments` / `payments` | payment-service datasource credentials |
+| `POSTGRES_ADMIN_USER` / `POSTGRES_ADMIN_PASSWORD` | compose only (`POSTGRES_USER`/`POSTGRES_PASSWORD` on the `postgres` container) | `postgres` / `postgres` | Postgres superuser, used only by `db/init/*.sql` to create the three service roles/databases |
 | `INVENTORY_JMS_CLIENT_ID` | `spring.jms.client-id`           | `inventory-service`                       | Durable subscription client id |
 | `PAYMENT_JMS_CLIENT_ID` | `spring.jms.client-id`             | `payment-service`                         | Durable subscription client id |
 | `INVENTORY_JMS_MAX_REDELIVERIES` / `PAYMENT_JMS_MAX_REDELIVERIES` | `app.jms.redelivery.max-redeliveries` | `3` | Local retries before dead-lettering |
@@ -136,6 +149,9 @@ honor `ACTIVEMQ_USER`/`ACTIVEMQ_PASSWORD`.
 ## Project structure
 
 ```
+db/init/            Postgres container init script: creates the orders/inventory/payments
+                     databases and roles (compose only; each service's own Flyway migrations
+                     under src/main/resources/db/migration own that database's schema)
 order-contracts/    OrderPlaced record, destination/type-id constants, shared JMS converter
 order-service/      Order form, OrderService (publish-after-commit + failure recording)
 inventory-service/  Durable consumer: reserve/reject stock, idempotent on orderId
@@ -154,6 +170,9 @@ payment-service/    Durable consumer: record payment, idempotent on orderId
 | Idempotent consumers via unique constraint on `order_id` | JMS is at-least-once; this makes redelivery after a crash/retry safe | Doesn't handle out-of-order delivery (not a concern for this single-topic design) |
 | Inventory records a `REJECTED` reservation instead of silently dropping the order | Keeps a complete audit trail of what was rejected and why | No compensating action on payment: an order can still be paid for even if it's REJECTED for stock (see Known gaps) |
 | `@Version` optimistic locking on `InventoryItem` | Cheap safety net against lost updates | Not load-bearing today: the durable-subscription trade-off above already limits this consumer to one live instance, so there's normally only one writer thread |
+| One Postgres container, one database per service, instead of one shared database/schema | A service can only ever see/touch its own tables (enforced by separate login roles, not just convention), so there is no accidental cross-service coupling through SQL; each service's Flyway history is independent | One container is still a single point of failure/scaling bottleneck for all three services; a real deployment would run (and operate) three separate Postgres instances |
+| Flyway owns the schema (`ddl-auto: validate`) | Schema changes are reviewable, versioned SQL instead of Hibernate inferring DDL at startup | One more file to write per schema change; `ddl-auto: validate` will fail fast (not silently patch) if an entity and a migration disagree |
+| Testcontainers (real Postgres + real ActiveMQ Classic) for ITs, replacing the embedded `vm://` broker and H2 | Tests run against the actual database and broker engine, not an in-memory stand-in with its own quirks/feature gaps (e.g. H2's Postgres-compatibility mode doesn't cover everything; the embedded broker can't exercise a true network boundary) | Needs Docker locally and in CI (GitHub-hosted runners have it); container startup adds a few seconds per test class, mitigated by Spring's test-context caching reusing one container set per distinct test configuration |
 
 ## Known gaps / next steps
 
@@ -166,9 +185,9 @@ payment-service/    Durable consumer: record payment, idempotent on orderId
   rejection event, payment compensates/refunds) or to reserve stock before accepting payment.
 - **Single-instance consumers**: see the durable-subscription trade-off above — scaling inventory-service
   or payment-service beyond one replica needs shared durable subscriptions or virtual topics.
-- **In-memory H2**: all three services use `jdbc:h2:mem:...`, so a container/process restart also
-  drops the idempotency tables (`orders`, `inventory_reservation`, `payment`) along with the data —
-  fine for this POC, not for the durability demo surviving a `docker compose down`.
+- **One shared Postgres container**: all three databases live in a single container (see the
+  trade-off above); it's a single point of failure/scaling limit shared by all three services, and
+  `docker compose down -v` (not plain `down`) is needed to actually reset the data.
 - **Compare with [orderplacementwithevents](https://github.com/natsaros7/orderplacementwithevents)**:
   the sibling repo solves the same domain with in-process Spring application events instead of a
   broker — no network hop or durable-subscription complexity, but no cross-process/cross-deployment

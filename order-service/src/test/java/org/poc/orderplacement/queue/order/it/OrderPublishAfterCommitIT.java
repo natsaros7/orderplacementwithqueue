@@ -11,22 +11,24 @@ import jakarta.jms.Topic;
 import org.junit.jupiter.api.Test;
 import org.poc.orderplacement.queue.contracts.OrderDestinations;
 import org.poc.orderplacement.queue.contracts.OrderPlaced;
+import org.poc.orderplacement.queue.order.TestcontainersConfiguration;
 import org.poc.orderplacement.queue.order.domain.OrderRepository;
 import org.poc.orderplacement.queue.order.service.OrderService;
 import org.poc.orderplacement.queue.order.web.OrderForm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.jms.support.converter.MessageConverter;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Proves the dual-write boundary described in the README: a message only reaches the topic once the
- * placing transaction has committed, never when it rolls back.
+ * placing transaction has committed, never when it rolls back. Runs against real Postgres and
+ * ActiveMQ Testcontainers (see {@link TestcontainersConfiguration}), not the embedded vm:// broker.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles("test")
+@Import(TestcontainersConfiguration.class)
 class OrderPublishAfterCommitIT {
 
     private final OrderService orderService;

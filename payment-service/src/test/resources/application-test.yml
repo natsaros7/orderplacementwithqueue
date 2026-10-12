@@ -1,6 +1,0 @@
-# Activated via @ActiveProfiles("test") on @SpringBootTest classes. Layers on top of the real
-# src/main/resources/application.yml (profile files don't replace it), so only the one property
-# that differs between a real broker and the embedded in-VM one needs to be restated here.
-spring:
-  activemq:
-    broker-url: vm://payment-service-test?broker.persistent=false&broker.useShutdownHook=false

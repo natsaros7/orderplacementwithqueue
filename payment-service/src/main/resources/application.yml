@@ -20,14 +20,14 @@ spring:
       session:
         transacted: true
   datasource:
-    url: ${PAYMENT_DB_URL:jdbc:h2:mem:paymentdb;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false}
-    driver-class-name: org.h2.Driver
-    username: ${PAYMENT_DB_USERNAME:sa}
-    password: ${PAYMENT_DB_PASSWORD:}
+    url: ${PAYMENT_DB_URL:jdbc:postgresql://localhost:5432/payments}
+    username: ${PAYMENT_DB_USERNAME:payments}
+    password: ${PAYMENT_DB_PASSWORD:payments}
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      # Flyway owns the schema; Hibernate only verifies the entities match it.
+      ddl-auto: validate
   mvc:
     problemdetails:
       enabled: true

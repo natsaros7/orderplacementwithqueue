@@ -31,6 +31,34 @@
         <jacoco.version>0.8.15</jacoco.version>
     </properties>
 
+    <!-- flyway-parent (a transitive parent of flyway-core/flyway-database-postgresql) declares two
+         access-restricted repositories (GitHub Packages, a private Azure DevOps feed) that Maven's
+         plugin-prefix cache probes on every build regardless of whether anything is actually
+         resolved from them, always 401ing and logging a [WARNING]. Redeclaring the same ids with
+         metadata lookups disabled is the documented Flyway workaround (flyway/flyway#3889). -->
+    <repositories>
+        <repository>
+            <id>flyway-community-db-support</id>
+            <url>https://maven.pkg.github.com/flyway/flyway-community-db-support</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>MavenFeed</id>
+            <url>https://red-gate.pkgs.visualstudio.com/MavenFeed/_packaging/MavenFeed/maven/v1/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
     <dependencyManagement>
         <dependencies>
             <dependency>
