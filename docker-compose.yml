@@ -1,4 +1,27 @@
 services:
+  postgres:
+    image: postgres:18
+    container_name: postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_ADMIN_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:-postgres}
+    volumes:
+      # Postgres 18's image stores data in a major-version-specific subdirectory and expects the
+      # volume mounted at the /var/lib/postgresql parent, not .../data directly (docker-library/postgres#1259).
+      - postgres-data:/var/lib/postgresql
+      # Database-per-service: creates the orders/inventory/payments databases and matching
+      # roles on first boot; each service's own Flyway migrations then own their schema.
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_ADMIN_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    restart: unless-stopped
+
   activemq:
     image: apache/activemq-classic:6.2.0
     container_name: activemq
@@ -33,8 +56,13 @@ services:
       ACTIVEMQ_URL: tcp://activemq:61616
       ACTIVEMQ_USER: ${ACTIVEMQ_USER:-admin}
       ACTIVEMQ_PASSWORD: ${ACTIVEMQ_PASSWORD:-admin}
+      ORDER_DB_URL: jdbc:postgresql://postgres:5432/orders
+      ORDER_DB_USERNAME: orders
+      ORDER_DB_PASSWORD: orders
     depends_on:
       activemq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     healthcheck:
       # temurin 25 JRE images ship no curl/wget: plain HTTP over bash /dev/tcp
@@ -56,8 +84,13 @@ services:
       ACTIVEMQ_URL: tcp://activemq:61616
       ACTIVEMQ_USER: ${ACTIVEMQ_USER:-admin}
       ACTIVEMQ_PASSWORD: ${ACTIVEMQ_PASSWORD:-admin}
+      INVENTORY_DB_URL: jdbc:postgresql://postgres:5432/inventory
+      INVENTORY_DB_USERNAME: inventory
+      INVENTORY_DB_PASSWORD: inventory
     depends_on:
       activemq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     healthcheck:
       # temurin 25 JRE images ship no curl/wget: plain HTTP over bash /dev/tcp
@@ -79,8 +112,13 @@ services:
       ACTIVEMQ_URL: tcp://activemq:61616
       ACTIVEMQ_USER: ${ACTIVEMQ_USER:-admin}
       ACTIVEMQ_PASSWORD: ${ACTIVEMQ_PASSWORD:-admin}
+      PAYMENT_DB_URL: jdbc:postgresql://postgres:5432/payments
+      PAYMENT_DB_USERNAME: payments
+      PAYMENT_DB_PASSWORD: payments
     depends_on:
       activemq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     healthcheck:
       # temurin 25 JRE images ship no curl/wget: plain HTTP over bash /dev/tcp
@@ -92,4 +130,5 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres-data:
   activemq-data:

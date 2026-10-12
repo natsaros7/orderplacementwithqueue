@@ -10,14 +10,14 @@ spring:
   jms:
     pub-sub-domain: true
   datasource:
-    url: ${ORDER_DB_URL:jdbc:h2:mem:orderdb;DB_CLOSE_DELAY=-1;DATABASE_TO_UPPER=false}
-    driver-class-name: org.h2.Driver
-    username: ${ORDER_DB_USERNAME:sa}
-    password: ${ORDER_DB_PASSWORD:}
+    url: ${ORDER_DB_URL:jdbc:postgresql://localhost:5432/orders}
+    username: ${ORDER_DB_USERNAME:orders}
+    password: ${ORDER_DB_PASSWORD:orders}
   jpa:
     open-in-view: false
     hibernate:
-      ddl-auto: update
+      # Flyway owns the schema; Hibernate only verifies the entities match it.
+      ddl-auto: validate
   mvc:
     problemdetails:
       enabled: true
