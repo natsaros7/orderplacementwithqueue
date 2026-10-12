@@ -41,6 +41,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   (maven + github-actions, weekly, grouped minor/patch).
 - Per-service multi-stage `Dockerfile`s and an updated `docker-compose.yml` using
   `apache/activemq-classic`, with health checks wiring service startup order.
+- PostgreSQL + Flyway, database-per-service: a `postgres` compose service with
+  `db/init/001-create-service-databases.sql` creating the `orders`/`inventory`/`payments`
+  databases and matching login roles on first boot; each service owns its schema via its own
+  `src/main/resources/db/migration` Flyway migrations (`spring.jpa.hibernate.ddl-auto: validate`).
+- Testcontainers (Postgres + ActiveMQ Classic) for integration tests, via a shared
+  `TestcontainersConfiguration` (`@ServiceConnection` beans) per service; `@DataJpaTest`s use
+  `@AutoConfigureTestDatabase(replace = NONE)` against the same Postgres container instead of an
+  auto-configured embedded database.
 
 ### Changed
 - Upgraded to Spring Boot 4.1.1 / Spring Framework 7 / Java 25 / Jackson 3, replacing the
@@ -55,6 +63,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `org.poc.orderplacement.queue.*`, split by feature (`contracts`, `order`, `inventory`, `payment`).
 - Replaced `.properties` config files with `application.yml`, with every environment-dependent
   value as `${ENV_VAR:default}`.
+- Inventory's stock seed moved from `data.sql` (which re-ran, and needed a `NOT EXISTS` guard, on
+  every start) to a Flyway migration (`V2__seed_initial_stock.sql`, applied exactly once).
+- Integration tests run against real Postgres and ActiveMQ Classic Testcontainers instead of H2 and
+  the embedded `vm://` broker; `src/test/resources/application-test.yml` and `@ActiveProfiles`
+  overrides are gone (container connection details are injected via `@ServiceConnection`, and the
+  real `application.yml` is exercised as-is).
 
 ### Fixed
 - Fixed the package typo `entites` → entity classes now live under `domain`.
@@ -71,3 +85,5 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `inventory-service` and `payment-service` no longer depend on the `order-service` artifact.
 - Removed the unmaintained `rmohr/activemq:5.15.9` (javax-era) image and the obsolete
   `version:` key from `docker-compose.yml`.
+- Removed H2 and `activemq-broker` (embedded in-VM broker) entirely; all persistence is PostgreSQL
+  and all broker ITs run against a real ActiveMQ Classic Testcontainer.
