@@ -15,17 +15,21 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.poc.orderplacement.queue.contracts.OrderDestinations;
 import org.poc.orderplacement.queue.contracts.OrderPlaced;
+import org.poc.orderplacement.queue.payment.TestcontainersConfiguration;
 import org.poc.orderplacement.queue.payment.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.jms.config.JmsListenerEndpointRegistry;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.listener.DefaultMessageListenerContainer;
-import org.springframework.test.context.ActiveProfiles;
 
-/** Proves the durable, idempotent consumer actually behaves that way against a real broker. */
+/**
+ * Proves the durable, idempotent consumer actually behaves that way against real Postgres and
+ * ActiveMQ Testcontainers (see {@link TestcontainersConfiguration}), not the embedded vm:// broker.
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
-@ActiveProfiles("test")
+@Import(TestcontainersConfiguration.class)
 class PaymentListenerIT {
 
     private static final String LISTENER_ID = "paymentOrdersListener";

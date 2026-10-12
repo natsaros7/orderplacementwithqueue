@@ -8,9 +8,17 @@ import org.junit.jupiter.api.Test;
 import org.poc.orderplacement.queue.inventory.domain.InventoryReservation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
+import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.testcontainers.postgresql.PostgreSQLContainer;
 
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import(InventoryReservationRepositoryTest.PostgresTestcontainersConfiguration.class)
 class InventoryReservationRepositoryTest {
 
     private final InventoryReservationRepository reservationRepository;
@@ -37,5 +45,14 @@ class InventoryReservationRepositoryTest {
 
         assertThat(reservationRepository.existsByOrderId(orderId)).isTrue();
         assertThat(reservationRepository.existsByOrderId(UUID.randomUUID())).isFalse();
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class PostgresTestcontainersConfiguration {
+        @Bean
+        @ServiceConnection
+        PostgreSQLContainer postgresContainer() {
+            return new PostgreSQLContainer("postgres:18");
+        }
     }
 }
